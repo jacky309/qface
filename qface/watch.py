@@ -16,30 +16,32 @@ class RunScriptChangeHandler(FileSystemEventHandler):
         self.is_running = False
 
     def on_modified(self, event):
+        if event.is_directory:
+            return
         self.run()
 
     def run(self):
         if self.is_running:
             return
         self.is_running = True
-        sh(self.script, cwd=Path.getcwd())
+        sh(str(self.script), cwd=Path.getcwd())
         self.is_running = False
 
 
-def monitor(script, src, dst):
+def monitor(script, src, dst, args):
     """
     reloads the script given by argv when src files changes
     """
     src = src if isinstance(src, (list, tuple)) else [src]
-    script = '{0} {1} {2}'.format(script, ' '.join(src), dst)
+    dst = Path(dst).expand().abspath()
     src = [Path(entry).expand().abspath() for entry in src]
-    event_handler = RunScriptChangeHandler(script)
+    command = ' '.join(args)
+    print('command: ', command)
+    event_handler = RunScriptChangeHandler(command)
     observer = Observer()
-    path = Path(script).dirname().expand().abspath()
-    click.secho('watch recursive: {0}'.format(path), fg='blue')
-    observer.schedule(event_handler, path, recursive=True)
+    click.secho('watch recursive: {0}'.format(script.dirname()), fg='blue')
+    observer.schedule(event_handler, script.dirname(), recursive=True)
     for entry in src:
-        entry = entry.dirname().expand().abspath()
         click.secho('watch recursive: {0}'.format(entry), fg='blue')
         observer.schedule(event_handler, entry, recursive=True)
     event_handler.run()  # run always once

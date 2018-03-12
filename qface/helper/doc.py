@@ -2,7 +2,7 @@ import re
 
 translate = None
 """
-The translare function used for transalting inline tags. The
+The translate function used for translating inline tags. The
 function will be called with tag, value arguments.
 
 Example:
@@ -21,7 +21,7 @@ class DocObject:
     The documentation object passed into the template engine
     """
     def __init__(self):
-        self.brief = str()
+        self.brief = []
         self.description = []
         self.see = []
         self.deprecated = False
@@ -56,6 +56,8 @@ class DocObject:
 
 
 def parse_doc(s):
+    """ parse a comment in the format of JavaDoc and returns an object, where each JavaDoc tag
+        is a property of the object. """
     if not s:
         return
     doc = DocObject()
@@ -78,4 +80,6 @@ def parse_doc(s):
                 doc.add_tag(tag, value)
         elif tag:  # append to previous matched tag
             doc.add_tag(tag, line)
+        else: # append any loose lines to description
+            doc.add_tag('description', line)
     return doc

@@ -2,7 +2,7 @@ module com.pelagicore.ivi.tuner 1.0;
 
 
 interface BaseTuner {
-    property int baseValue;
+    int baseValue;
 }
 
 
@@ -27,11 +27,20 @@ interface Tuner extends BaseTuner {
 
     list<int> primitiveList;
     list<Station> complexList;
+    map<int> primitiveMap;
+    map<Station> complexMap;
     model<int> primitiveModel;
     model<Station> complexModel;
 
     signal scanFinished();
     signal broadcastMessage(string message);
+
+    TunerExtension extension;
+
+    Feature feature;
+}
+
+interface TunerExtension {
 }
 
 /** enum State */
@@ -55,7 +64,7 @@ enum Waveband {
     AM=1
 }
 
-flag Features {
+flag Feature {
     Mono = 0x1,
     Stereo = 0x2,
 }
@@ -66,6 +75,10 @@ struct Station {
     int stationId;
     /** member name */
     string name;
+    list<int> primitiveList;
+    list<Station> complexList;
+    map<int> primitiveMap;
+    map<Station> complexMap;
 }
 
 

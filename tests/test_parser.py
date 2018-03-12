@@ -1,8 +1,10 @@
 import logging
 import logging.config
+import pytest
 from path import Path
 
 from qface.generator import FileSystem
+import qface.idl.domain as domain
 
 # logging.config.fileConfig('logging.ini')
 logging.basicConfig()
@@ -68,9 +70,10 @@ def test_operation():
     assert operation
     operation = interface._contentMap['previousStation']
     assert operation
+    assert not operation.is_const
     operation = interface._contentMap['numStations']
     assert operation
-    assert operation.const
+    assert operation.is_const
 
 
 def test_signals():
@@ -106,6 +109,7 @@ def test_enum():
 def test_enum_counter():
     system = load_test()
     enum = system.lookup('com.pelagicore.test.State')
+    assert type(enum) is domain.Enum
     assert enum
     assert enum._memberMap['Null'].value is 0
     assert enum._memberMap['Failure'].value is 3
@@ -114,6 +118,7 @@ def test_enum_counter():
 def test_flag_counter():
     system = load_test()
     flag = system.lookup('com.pelagicore.test.Phase')
+    assert type(flag) is domain.Enum
     assert flag
     assert flag._memberMap['PhaseOne'].value is 1
     assert flag._memberMap['PhaseTwo'].value is 2
@@ -122,36 +127,102 @@ def test_flag_counter():
 
 def test_flag():
     system = load_tuner()
-    symbol = system.lookup('com.pelagicore.ivi.tuner.Features')
+    symbol = system.lookup('com.pelagicore.ivi.tuner.Feature')
+    assert type(symbol) is domain.Enum
     assert symbol.is_flag
+    assert not symbol.is_enum
+    symbol = system.lookup('com.pelagicore.ivi.tuner.Tuner#feature')
+    assert type(symbol) is domain.Property
+    assert type(symbol.type.reference) is domain.Enum
+
+    assert symbol.type.is_flag
+    assert symbol.type.is_enumeration
 
 
 def test_list():
     system = load_tuner()
     interface = system.lookup('com.pelagicore.ivi.tuner.Tuner')
     property = interface._propertyMap['primitiveList']
+    assert type(property) is domain.Property
     assert property.type.name == 'list'
     assert property.type.is_list is True
     assert property.type.nested.is_primitive
     assert property.type.nested.name == 'int'
 
     property = interface._propertyMap['complexList']
+    assert type(property) is domain.Property
     assert property.type.name == 'list'
     assert property.type.is_list is True
     assert property.type.nested.is_complex
     assert property.type.nested.name == 'Station'
 
 
+def test_struct_list():
+    system = load_tuner()
+    struct = system.lookup('com.pelagicore.ivi.tuner.Station')
+    field = struct._fieldMap['primitiveList']
+    assert type(field) is domain.Field
+    assert field.type.name == 'list'
+    assert field.type.is_list is True
+    assert field.type.nested.is_primitive
+    assert field.type.nested.name == 'int'
+
+    field = struct._fieldMap['complexList']
+    assert type(field) is domain.Field
+    assert field.type.name == 'list'
+    assert field.type.is_list is True
+    assert field.type.nested.is_complex
+    assert field.type.nested.name == 'Station'
+
+
+def test_map():
+    system = load_tuner()
+    interface = system.lookup('com.pelagicore.ivi.tuner.Tuner')
+    property = interface._propertyMap['primitiveMap']
+    assert type(property) is domain.Property
+    assert property.type.name == 'map'
+    assert property.type.is_map is True
+    assert property.type.nested.is_primitive
+    assert property.type.nested.name == 'int'
+
+    property = interface._propertyMap['complexMap']
+    assert type(property) is domain.Property
+    assert property.type.name == 'map'
+    assert property.type.is_map is True
+    assert property.type.nested.is_complex
+    assert property.type.nested.name == 'Station'
+
+
+def test_struct_map():
+    system = load_tuner()
+    struct = system.lookup('com.pelagicore.ivi.tuner.Station')
+    field = struct._fieldMap['primitiveMap']
+    assert type(field) is domain.Field
+    assert field.type.name == 'map'
+    assert field.type.is_map is True
+    assert field.type.nested.is_primitive
+    assert field.type.nested.name == 'int'
+
+    field = struct._fieldMap['complexMap']
+    assert type(field) is domain.Field
+    assert field.type.name == 'map'
+    assert field.type.is_map is True
+    assert field.type.nested.is_complex
+    assert field.type.nested.name == 'Station'
+
+
 def test_model():
     system = load_tuner()
     interface = system.lookup('com.pelagicore.ivi.tuner.Tuner')
     property = interface._propertyMap['primitiveModel']
+    assert type(property) is domain.Property
     assert property.type.name == 'model'
     assert property.type.is_model is True
     assert property.type.nested.is_primitive
     assert property.type.nested.name == 'int'
 
     property = interface._propertyMap['complexModel']
+    assert type(property) is domain.Property
     assert property.type.name == 'model'
     assert property.type.is_model is True
     assert property.type.nested.is_complex
@@ -164,4 +235,29 @@ def test_extension():
     extends = system.lookup('com.pelagicore.ivi.tuner.BaseTuner')
     # import pdb; pdb.set_trace()
     assert extends is interface.extends
+
+
+def test_interface_property():
+    system = load_tuner()
+    tuner = system.lookup('com.pelagicore.ivi.tuner.Tuner')
+    extension = system.lookup('com.pelagicore.ivi.tuner.TunerExtension')
+    prop = tuner._propertyMap['extension']
+    assert prop.type.is_interface
+    assert prop.type.reference is extension
+
+
+def test_symbol_kind():
+    system = load_tuner()
+    tuner = system.lookup('com.pelagicore.ivi.tuner.Tuner')
+    assert tuner.kind == 'interface'
+    property = system.lookup('com.pelagicore.ivi.tuner.Tuner#primitiveModel')
+    assert property.kind == 'property'
+
+
+def test_parser_exceptions():
+    path = inputPath / 'org.example.failing.qface'
+    system = FileSystem.parse_document(path)
+
+    system = FileSystem.parse_document('not-exists')
+
 

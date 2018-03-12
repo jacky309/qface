@@ -32,7 +32,7 @@ def test_gen_interface():
     template = """{{module.interfaces|join(',')}}"""
     module = system.lookup('com.pelagicore.ivi.tuner')
     text = gen.apply(template, {"module": module})
-    assert text == 'BaseTuner,Tuner'
+    assert text == 'BaseTuner,Tuner,TunerExtension'
 
 
 def test_parse_document():
@@ -67,5 +67,5 @@ def test_destination_prefix():
         ctx = {'out': out.abspath(), 'module': module}
         generator.write(dst_template, 'module.txt', ctx)
         path = generator.apply(dst_template, ctx)
-        assert Path(path).exists()
+        assert Path(path).exists() == True
     out.rmtree_p()

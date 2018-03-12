@@ -23,6 +23,7 @@ interface Test {
     void echo(string message);
     Message message;
     Status status;
+    ApplicationState state;
     list<int> list001;
     list<Message> list002;
     model<int> model001;
@@ -38,6 +39,14 @@ enum Status {
     ON,
     OFF
 }
+
+flag ApplicationState {
+    Suspended,
+    Hidden,
+    Inactive,
+    Active,
+}
+
 """
 
 
@@ -70,11 +79,11 @@ def test_return_type():
     # check for struct
     prop = interface._propertyMap['message']
     answer = qtcpp.Filters.returnType(prop)
-    assert answer == 'QmlMessage'
+    assert answer == 'Message'
     # check for enum
     prop = interface._propertyMap['status']
     answer = qtcpp.Filters.returnType(prop)
-    assert answer == 'QmlExampleModule::Status'
+    assert answer == 'Status::StatusEnum'
 
     # check for list of primitive
     prop = interface._propertyMap['list001']
@@ -89,12 +98,12 @@ def test_return_type():
     # check for model of primitive
     prop = interface._propertyMap['model001']
     answer = qtcpp.Filters.returnType(prop)
-    assert answer == 'QmlVariantModel *'
+    assert answer == 'VariantModel *'
 
     # check for model of structs
     prop = interface._propertyMap['model002']
     answer = qtcpp.Filters.returnType(prop)
-    assert answer == 'QmlMessageModel *'
+    assert answer == 'VariantModel *'
 
 
 def test_default_value():
@@ -106,9 +115,9 @@ def test_default_value():
     parameter = operation._parameterMap['message']
 
     types = {
-        'bool': 'false',
-        'int': '0',
-        'real': '0.0',
+        'bool': 'bool(false)',
+        'int': 'int(0)',
+        'real': 'qreal(0.0)',
         'string': 'QString()',
         'var': 'QVariant()'
     }
@@ -121,11 +130,16 @@ def test_default_value():
     # check for struct
     prop = interface._propertyMap['message']
     answer = qtcpp.Filters.defaultValue(prop)
-    assert answer == 'QmlMessage()'
+    assert answer == 'Message()'
     # check for enum
     prop = interface._propertyMap['status']
     answer = qtcpp.Filters.defaultValue(prop)
-    assert answer == 'QmlExampleModule::ON'
+    assert answer == 'Status::StatusEnum::ON'
+
+    # check for flag
+    prop = interface._propertyMap['state']
+    answer = qtcpp.Filters.defaultValue(prop)
+    assert answer == '0'
 
     # check for list of primitive
     prop = interface._propertyMap['list001']
@@ -140,12 +154,12 @@ def test_default_value():
     # check for model of primitive
     prop = interface._propertyMap['model001']
     answer = qtcpp.Filters.defaultValue(prop)
-    assert answer == 'new QmlVariantModel(this)'
+    assert answer == 'new VariantModel(this)'
 
     # check for model of structs
     prop = interface._propertyMap['model002']
     answer = qtcpp.Filters.defaultValue(prop)
-    assert answer == 'new QmlMessageModel(this)'
+    assert answer == 'new VariantModel(this)'
 
 
 def test_parameter_type():
@@ -173,11 +187,11 @@ def test_parameter_type():
     # check for struct
     prop = interface._propertyMap['message']
     answer = qtcpp.Filters.parameterType(prop)
-    assert answer == 'const QmlMessage &{0}'.format(prop.name)
+    assert answer == 'const Message &{0}'.format(prop.name)
     # check for enum
     prop = interface._propertyMap['status']
     answer = qtcpp.Filters.parameterType(prop)
-    assert answer == 'QmlExampleModule::Status {0}'.format(prop.name)
+    assert answer == 'Status::StatusEnum {0}'.format(prop.name)
 
     # check for list of primitive
     prop = interface._propertyMap['list001']
@@ -192,12 +206,12 @@ def test_parameter_type():
     # check for model of primitive
     prop = interface._propertyMap['model001']
     answer = qtcpp.Filters.parameterType(prop)
-    assert answer == 'QmlVariantModel *{0}'.format(prop.name)
+    assert answer == 'VariantModel *{0}'.format(prop.name)
 
     # check for model of structs
     prop = interface._propertyMap['model002']
     answer = qtcpp.Filters.parameterType(prop)
-    assert answer == 'QmlMessageModel *{0}'.format(prop.name)
+    assert answer == 'VariantModel *{0}'.format(prop.name)
 
 
 def test_namespace():
@@ -205,10 +219,10 @@ def test_namespace():
     module = system.lookup('org.example')
     assert module
     ns = qtcpp.Filters.open_ns(module)
-    assert ns == 'namespace org { example {'
+    assert ns == 'namespace org { namespace example {'
 
     ns = qtcpp.Filters.close_ns(module)
-    assert ns == '} }'
+    assert ns == '} } // namespace org::example'
 
     ns = qtcpp.Filters.using_ns(module)
-    assert ns == 'using namespace org::example'
+    assert ns == 'using namespace org::example;'
